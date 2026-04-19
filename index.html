@@ -11,45 +11,53 @@
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #map { height: 100vh; width: 100%; }
         
+        /* Filter-menyn */
         #filter-container {
             position: absolute; top: 15px; right: 15px; z-index: 1000;
             background: white; padding: 15px; border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-left: 5px solid #ff6600;
         }
 
-        #year-filter { width: 100%; padding: 5px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        #year-filter { width: 100%; padding: 5px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
 
+        /* Koordinatvisning för admin */
         .admin-coord-display {
             position: absolute; bottom: 25px; left: 20px;
             background: rgba(255, 255, 255, 0.95); padding: 12px; z-index: 1000;
             border: 2px solid #ff6600; border-radius: 8px; font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         /* Popup styling */
-        .ol-popup { min-width: 250px; }
+        .ol-popup { min-width: 280px; }
         .ol-popup h3 { margin: 0 0 2px 0; color: #333; font-size: 18px; }
-        .ol-popup p.meta { margin: 0 0 10px 0; font-size: 12px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .ol-popup p.meta { margin: 0 0 12px 0; font-size: 12px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 6px; }
         
-        .btn-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        .btn-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
         .btn {
-            display: block; text-align: center; padding: 8px;
+            display: block; text-align: center; padding: 10px;
             border-radius: 4px; text-decoration: none; color: white;
-            font-weight: bold; font-size: 12px;
+            font-weight: bold; font-size: 13px; transition: background 0.2s;
         }
         .btn-pdf { background-color: #e74c3c; }
         .btn-winsplits { background-color: #3498db; }
         .btn-livelox { background-color: #2ecc71; }
+        .btn:hover { filter: brightness(90%); }
 
         .referat-box {
-            max-height: 180px; overflow-y: auto; background: #fdf6f2;
-            padding: 10px; border: 1px solid #f0e0d5; border-radius: 4px;
+            max-height: 200px; overflow-y: auto; background: #fdf6f2;
+            padding: 12px; border: 1px solid #f0e0d5; border-radius: 4px;
             font-size: 13px; line-height: 1.5; color: #444; white-space: pre-wrap;
         }
 
+        /* KVADRATISK ORIENTERINGSSKÄRM */
         .ol-icon-inner {
-            width: 22px; height: 22px;
+            width: 20px; 
+            height: 20px;
+            /* Diagonal delning: Vitt uppe till vänster, Orange nere till höger */
             background: linear-gradient(135deg, #ffffff 50%, #ff6600 50%);
-            border: 1.5px solid #333; transform: rotate(45deg);
+            border: 1.5px solid #333; 
+            /* Ingen rotation här för att behålla kvadraten */
             box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
     </style>
@@ -73,23 +81,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <script>
+        // Din länk till Google Sheets
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjd0ZeXpPuXF5guwyrqy8o8QXOZVQK8tnY1juG0qeDc5sr8_l8HvAy0S2ybISA_-CW7IerhEYA7Oa/pub?output=csv';
 
+        // Initialisera kartan
         const map = L.map('map').setView([62.0, 15.0], 5);
         let allMarkers = [];
 
+        // Bakgrundskarta
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap, © CARTO'
         }).addTo(map);
 
+        // Skapa den kvadratiska ikonen
         const olIcon = L.divIcon({
             className: 'ol-icon',
             html: `<div class="ol-icon-inner"></div>`,
-            iconSize: [22, 22], iconAnchor: [11, 11]
+            iconSize: [20, 20], 
+            iconAnchor: [10, 10]
         });
 
+        // Funktion för att ladda data från Google Sheets
         async function loadData() {
-            // Vi använder PapaParse för att läsa CSV korrekt även med radbrytningar
             Papa.parse(csvUrl, {
                 download: true,
                 header: true,
@@ -99,7 +112,6 @@
                     const yearsFound = new Set();
 
                     results.data.forEach(row => {
-                        // Vi använder kolumnnamnen direkt från din Rad 1
                         const item = {
                             namn: row["Namn"],
                             ar: row["År"],
@@ -139,6 +151,7 @@
                         }
                     });
 
+                    // Sortera och fyll på årtals-filtret
                     Array.from(yearsFound).sort((a, b) => b - a).forEach(year => {
                         const opt = document.createElement('option');
                         opt.value = year; opt.innerHTML = year;
@@ -148,6 +161,7 @@
             });
         }
 
+        // Funktion för att filtrera kartan
         function filterMarkers() {
             const selectedYear = document.getElementById('year-filter').value;
             allMarkers.forEach(marker => {
@@ -159,6 +173,7 @@
             });
         }
 
+        // Hjälpmedel för att hämta koordinater
         map.on('click', function(e) {
             document.getElementById('coords').innerHTML = 
                 `<strong>Admin-koordinater:</strong><br>Lat: ${e.latlng.lat.toFixed(6)}<br>Long: ${e.latlng.lng.toFixed(6)}`;
