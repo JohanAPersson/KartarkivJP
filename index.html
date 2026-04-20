@@ -6,6 +6,8 @@
     <title>Digitalt Kartarkiv</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -52,13 +54,18 @@
 
         /* KVADRATISK ORIENTERINGSSKÄRM */
         .ol-icon-inner {
-            width: 20px; 
-            height: 20px;
-            /* Diagonal delning: Vitt uppe till vänster, Orange nere till höger */
+            width: 20px; height: 20px;
             background: linear-gradient(135deg, #ffffff 50%, #ff6600 50%);
-            border: 1.5px solid #333; 
-            /* Ingen rotation här för att behålla kvadraten */
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            border: 1.5px solid #333; box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Anpassning av kluster-cirklar */
+        .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+            background-color: rgba(255, 102, 0, 0.6);
+        }
+        .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+            background-color: rgba(255, 102, 0, 0.8);
+            color: white; font-weight: bold;
         }
     </style>
 </head>
@@ -79,29 +86,33 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
     <script>
-        // Din länk till Google Sheets
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjd0ZeXpPuXF5guwyrqy8o8QXOZVQK8tnY1juG0qeDc5sr8_l8HvAy0S2ybISA_-CW7IerhEYA7Oa/pub?output=csv';
 
-        // Initialisera kartan
         const map = L.map('map').setView([62.0, 15.0], 5);
-        let allMarkers = [];
+        
+        // Skapa klustergruppen
+        const markersGroup = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            spiderfyOnMaxZoom: true,
+            disableClusteringAtZoom: 17 // Sluta klustra när man är riktigt nära
+        });
 
         // Bakgrundskarta
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap, © CARTO'
         }).addTo(map);
 
-        // Skapa den kvadratiska ikonen
         const olIcon = L.divIcon({
             className: 'ol-icon',
             html: `<div class="ol-icon-inner"></div>`,
-            iconSize: [20, 20], 
-            iconAnchor: [10, 10]
+            iconSize: [20, 20], iconAnchor: [10, 10]
         });
 
-        // Funktion för att ladda data från Google Sheets
+        let allMarkersList = []; // Sparar markörer för filtrering
+
         async function loadData() {
             Papa.parse(csvUrl, {
                 download: true,
@@ -132,26 +143,27 @@
                                 <div class="ol-popup">
                                     <h3>${item.namn}</h3>
                                     <p class="meta"><strong>${item.ar}</strong> | ${item.arrangor} | ${item.langd}m</p>
-                                    
                                     <div class="btn-group">
                                         <a href="${item.pdf}" target="_blank" class="btn btn-pdf">Karta (PDF)</a>
                                         <a href="${item.winsplits}" target="_blank" class="btn btn-winsplits">Winsplits</a>
                                         <a href="${item.livelox}" target="_blank" class="btn btn-livelox">Livelox</a>
                                     </div>
-
                                     <div class="referat-box">${item.referat}</div>
                                 </div>
                             `;
                             
                             marker.bindPopup(popupContent, { maxWidth: 350 });
-                            marker.year = item.ar;
-                            allMarkers.push(marker);
-                            marker.addTo(map);
+                            marker.year = String(item.ar);
+                            
+                            allMarkersList.push(marker);
+                            markersGroup.addLayer(marker);
                             if(item.ar) yearsFound.add(item.ar);
                         }
                     });
 
-                    // Sortera och fyll på årtals-filtret
+                    map.addLayer(markersGroup);
+
+                    // Uppdatera årtalsfiltret
                     Array.from(yearsFound).sort((a, b) => b - a).forEach(year => {
                         const opt = document.createElement('option');
                         opt.value = year; opt.innerHTML = year;
@@ -161,19 +173,17 @@
             });
         }
 
-        // Funktion för att filtrera kartan
         function filterMarkers() {
             const selectedYear = document.getElementById('year-filter').value;
-            allMarkers.forEach(marker => {
-                if (selectedYear === "all" || String(marker.year) === selectedYear) {
-                    map.addLayer(marker);
-                } else {
-                    map.removeLayer(marker);
+            markersGroup.clearLayers(); // Töm klustret
+            
+            allMarkersList.forEach(marker => {
+                if (selectedYear === "all" || marker.year === selectedYear) {
+                    markersGroup.addLayer(marker); // Lägg bara till matchande markörer
                 }
             });
         }
 
-        // Hjälpmedel för att hämta koordinater
         map.on('click', function(e) {
             document.getElementById('coords').innerHTML = 
                 `<strong>Admin-koordinater:</strong><br>Lat: ${e.latlng.lat.toFixed(6)}<br>Long: ${e.latlng.lng.toFixed(6)}`;
