@@ -97,7 +97,7 @@
         const markersGroup = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true,
-            disableClusteringAtZoom: 17 // Sluta klustra när man är riktigt nära
+            disableClusteringAtZoom: 17
         });
 
         // Bakgrundskarta
@@ -111,7 +111,7 @@
             iconSize: [20, 20], iconAnchor: [10, 10]
         });
 
-        let allMarkersList = []; // Sparar markörer för filtrering
+        let allMarkersList = [];
 
         async function loadData() {
             Papa.parse(csvUrl, {
@@ -128,6 +128,7 @@
                             ar: row["År"],
                             arrangor: row["Arrangör"],
                             langd: row["Längd_m"],
+                            tid: row["Tid"] || "", // Hämtar värdet från kolumnen Tid
                             lat: parseFloat(String(row["Latitud"]).replace(',', '.')),
                             lng: parseFloat(String(row["Longitud"]).replace(',', '.')),
                             referat: row["Referat"] || "Inget referat skrivet.",
@@ -142,7 +143,9 @@
                             const popupContent = `
                                 <div class="ol-popup">
                                     <h3>${item.namn}</h3>
-                                    <p class="meta"><strong>${item.ar}</strong> | ${item.arrangor} | ${item.langd}m</p>
+                                    <p class="meta">
+                                        <strong>${item.ar}</strong> | ${item.arrangor} | ${item.langd}m ${item.tid ? '| ' + item.tid : ''}
+                                    </p>
                                     <div class="btn-group">
                                         <a href="${item.pdf}" target="_blank" class="btn btn-pdf">Karta (PDF)</a>
                                         <a href="${item.winsplits}" target="_blank" class="btn btn-winsplits">Winsplits</a>
@@ -163,7 +166,6 @@
 
                     map.addLayer(markersGroup);
 
-                    // Uppdatera årtalsfiltret
                     Array.from(yearsFound).sort((a, b) => b - a).forEach(year => {
                         const opt = document.createElement('option');
                         opt.value = year; opt.innerHTML = year;
@@ -175,11 +177,11 @@
 
         function filterMarkers() {
             const selectedYear = document.getElementById('year-filter').value;
-            markersGroup.clearLayers(); // Töm klustret
+            markersGroup.clearLayers();
             
             allMarkersList.forEach(marker => {
                 if (selectedYear === "all" || marker.year === selectedYear) {
-                    markersGroup.addLayer(marker); // Lägg bara till matchande markörer
+                    markersGroup.addLayer(marker);
                 }
             });
         }
