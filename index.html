@@ -46,6 +46,15 @@
         .btn-livelox { background-color: #2ecc71; }
         .btn:hover { filter: brightness(90%); }
 
+        /* Styling för knappar utan länk (Inaktiverade) */
+        .btn-disabled {
+            background-color: #bdc3c7 !important;
+            color: #7f8c8d !important;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none !important;
+        }
+
         .referat-box {
             max-height: 200px; overflow-y: auto; background: #fdf6f2;
             padding: 12px; border: 1px solid #f0e0d5; border-radius: 4px;
@@ -69,7 +78,7 @@
         /* Årtalsetikett på ensamma kartikoner */
         .ol-icon-year {
             position: absolute;
-            top: 23px; /* Placerad precis under kvadraten */
+            top: 23px;
             left: 50%;
             transform: translateX(-50%);
             background: white;
@@ -139,6 +148,16 @@
             });
         }
 
+        // Hjälpfunktion för att bygga klickbara eller inaktiverade knappar
+        function getButtonHtml(url, label, activeClass) {
+            const hasUrl = url && url.trim() !== "" && url !== "#";
+            if (hasUrl) {
+                return `<a href="${url}" target="_blank" class="btn ${activeClass}">${label}</a>`;
+            } else {
+                return `<a href="#" class="btn btn-disabled">${label} (saknas)</a>`;
+            }
+        }
+
         let allMarkersList = [];
 
         async function loadData() {
@@ -156,13 +175,13 @@
                             ar: row["År"],
                             arrangor: row["Arrangör"],
                             langd: row["Längd_m"],
-                            tid: row["Tid"] || "", // Hämtar värdet från kolumnen Tid
+                            tid: row["Tid"] || "",
                             lat: parseFloat(String(row["Latitud"]).replace(',', '.')),
                             lng: parseFloat(String(row["Longitud"]).replace(',', '.')),
                             referat: row["Referat"] || "Inget referat skrivet.",
-                            pdf: row["PDF_URL"] || "#",
-                            winsplits: row["Splits_URL"] || "#",
-                            livelox: row["Route_URL"] || "#"
+                            pdf: row["PDF_URL"],
+                            winsplits: row["Splits_URL"],
+                            livelox: row["Route_URL"]
                         };
 
                         if (!isNaN(item.lat) && !isNaN(item.lng)) {
@@ -175,9 +194,9 @@
                                         <strong>${item.ar}</strong> | ${item.arrangor} | ${item.langd}m ${item.tid ? '| ' + item.tid : ''}
                                     </p>
                                     <div class="btn-group">
-                                        <a href="${item.pdf}" target="_blank" class="btn btn-pdf">Karta (PDF)</a>
-                                        <a href="${item.winsplits}" target="_blank" class="btn btn-winsplits">Split Times</a>
-                                        <a href="${item.livelox}" target="_blank" class="btn btn-livelox">Route</a>
+                                        ${getButtonHtml(item.pdf, 'Karta (PDF)', 'btn-pdf')}
+                                        ${getButtonHtml(item.winsplits, 'Split Times', 'btn-winsplits')}
+                                        ${getButtonHtml(item.livelox, 'Route', 'btn-livelox')}
                                     </div>
                                     <div class="referat-box">${item.referat}</div>
                                 </div>
