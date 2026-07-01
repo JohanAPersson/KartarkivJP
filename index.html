@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digitalt Kartarkiv</title>
     
-    <link class="swiftype" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
@@ -46,12 +46,13 @@
         .btn-livelox { background-color: #2ecc71; }
         .btn:hover { filter: brightness(90%); }
 
-        /* Styling för knappar utan länk (Inaktiverade) */
+        /* Styling för knappar utan länk (Inaktiverade element) */
         .btn-disabled {
             background-color: #bdc3c7 !important;
             color: #7f8c8d !important;
             cursor: not-allowed !important;
-            pointer-events: none !important; /* Blockerar klick i webbläsaren */
+            pointer-events: none !important; /* Blockerar alla musklick */
+            user-select: none !important; /* Hindrar texten från att markeras */
             box-shadow: none !important;
         }
 
@@ -123,7 +124,9 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
     <script>
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjd0ZeXpPuXF5guwyrqy8o8QXOZVQK8tnY1juG0qeDc5sr8_l8HvAy0S2ybISA_-CW7IerhEYA7Oa/pub?output=csv';
+        // Lagt till en cache-breaker dynamiskt så att ändringar i scriptet/databasen tvingas fram omedelbart
+        const csvBaseUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjd0ZeXpPuXF5guwyrqy8o8QXOZVQK8tnY1juG0qeDc5sr8_l8HvAy0S2ybISA_-CW7IerhEYA7Oa/pub?output=csv';
+        const csvUrl = csvBaseUrl + '&t=' + new Date().getTime();
 
         const map = L.map('map').setView([62.0, 15.0], 5);
         
@@ -148,18 +151,17 @@
             });
         }
 
-        // UPPDATERAD: Skottsäker funktion för att identifiera giltiga länkar
+        // Skottsäker funktion för att identifiera giltiga länkar
         function getButtonHtml(url, label, activeClass) {
-            // Gör om till sträng, ta bort mellanslag i början/slutet
             const cleanUrl = url ? String(url).trim() : "";
             
-            // Kollar om länken faktiskt börjar med http:// eller https://
+            // Kontrollerar stenhårt om länken börjar med http eller https
             const hasValidUrl = cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://");
 
             if (hasValidUrl) {
                 return `<a href="${cleanUrl}" target="_blank" class="btn ${activeClass}">${label}</a>`;
             } else {
-                // Tar helt bort href och target på den inaktiverade knappen så den inte kan trigga flikar
+                // Returnerar en span-tagg UTAN href eller target. Denna kan INTE öppna flikar.
                 return `<span class="btn btn-disabled">${label} (saknas)</span>`;
             }
         }
