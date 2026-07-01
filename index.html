@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digitalt Kartarkiv</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link class="swiftype" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
@@ -50,8 +50,8 @@
         .btn-disabled {
             background-color: #bdc3c7 !important;
             color: #7f8c8d !important;
-            cursor: not-allowed;
-            pointer-events: none;
+            cursor: not-allowed !important;
+            pointer-events: none !important; /* Blockerar klick i webbläsaren */
             box-shadow: none !important;
         }
 
@@ -61,7 +61,7 @@
             font-size: 13px; line-height: 1.5; color: #444; white-space: pre-wrap;
         }
 
-        /* HUVUDKLASS FÖR DIV-IKON (Fixar overflow och Leaflets standardstilar) */
+        /* HUVUDKLASS FÖR DIV-IKON */
         .ol-icon {
             background: transparent !important;
             border: none !important;
@@ -148,13 +148,19 @@
             });
         }
 
-        // Hjälpfunktion för att bygga klickbara eller inaktiverade knappar
+        // UPPDATERAD: Skottsäker funktion för att identifiera giltiga länkar
         function getButtonHtml(url, label, activeClass) {
-            const hasUrl = url && url.trim() !== "" && url !== "#";
-            if (hasUrl) {
-                return `<a href="${url}" target="_blank" class="btn ${activeClass}">${label}</a>`;
+            // Gör om till sträng, ta bort mellanslag i början/slutet
+            const cleanUrl = url ? String(url).trim() : "";
+            
+            // Kollar om länken faktiskt börjar med http:// eller https://
+            const hasValidUrl = cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://");
+
+            if (hasValidUrl) {
+                return `<a href="${cleanUrl}" target="_blank" class="btn ${activeClass}">${label}</a>`;
             } else {
-                return `<a href="#" class="btn btn-disabled">${label} (saknas)</a>`;
+                // Tar helt bort href och target på den inaktiverade knappen så den inte kan trigga flikar
+                return `<span class="btn btn-disabled">${label} (saknas)</span>`;
             }
         }
 
