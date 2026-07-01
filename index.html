@@ -133,8 +133,8 @@
                             lng: parseFloat(String(row["Longitud"]).replace(',', '.')),
                             referat: row["Referat"] || "Inget referat skrivet.",
                             pdf: row["PDF_URL"] || "#",
-                            winsplits: row["Winsplits_URL"] || "#",
-                            livelox: row["Livelox_URL"] || "#"
+                            winsplits: row["Splits_URL"] || "#",
+                            livelox: row["Route_URL"] || "#"
                         };
 
                         if (!isNaN(item.lat) && !isNaN(item.lng)) {
@@ -148,8 +148,8 @@
                                     </p>
                                     <div class="btn-group">
                                         <a href="${item.pdf}" target="_blank" class="btn btn-pdf">Karta (PDF)</a>
-                                        <a href="${item.winsplits}" target="_blank" class="btn btn-winsplits">Winsplits</a>
-                                        <a href="${item.livelox}" target="_blank" class="btn btn-livelox">Livelox</a>
+                                        <a href="${item.winsplits}" target="_blank" class="btn btn-winsplits">Split Times</a>
+                                        <a href="${item.livelox}" target="_blank" class="btn btn-livelox">Route</a>
                                     </div>
                                     <div class="referat-box">${item.referat}</div>
                                 </div>
