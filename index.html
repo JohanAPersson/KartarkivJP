@@ -32,7 +32,27 @@
 
         /* Popup styling */
         .ol-popup { min-width: 280px; }
-        .ol-popup h3 { margin: 0 0 2px 0; color: #333; font-size: 18px; }
+        
+        /* Header med namn till vänster och plats till höger */
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .popup-header h3 { margin: 0; color: #333; font-size: 18px; line-height: 1.2; }
+        .popup-location {
+            font-size: 11px;
+            font-weight: 600;
+            color: #d35400;
+            background: #fff0e6;
+            border: 1px solid #ffd8c2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
         .ol-popup p.meta { margin: 0 0 12px 0; font-size: 12px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 6px; }
         
         .btn-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
@@ -46,13 +66,13 @@
         .btn-livelox { background-color: #2ecc71; }
         .btn:hover { filter: brightness(90%); }
 
-        /* Styling för knappar utan länk (Inaktiverade element) */
+        /* Styling för knappar utan länk */
         .btn-disabled {
             background-color: #bdc3c7 !important;
             color: #7f8c8d !important;
             cursor: not-allowed !important;
-            pointer-events: none !important; /* Blockerar alla musklick */
-            user-select: none !important; /* Hindrar texten från att markeras */
+            pointer-events: none !important;
+            user-select: none !important;
             box-shadow: none !important;
         }
 
@@ -124,25 +144,21 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
     <script>
-        // Lagt till en cache-breaker dynamiskt så att ändringar i scriptet/databasen tvingas fram omedelbart
         const csvBaseUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDjd0ZeXpPuXF5guwyrqy8o8QXOZVQK8tnY1juG0qeDc5sr8_l8HvAy0S2ybISA_-CW7IerhEYA7Oa/pub?output=csv';
         const csvUrl = csvBaseUrl + '&t=' + new Date().getTime();
 
         const map = L.map('map').setView([62.0, 15.0], 5);
         
-        // Skapa klustergruppen
         const markersGroup = L.markerClusterGroup({
             showCoverageOnHover: false,
             spiderfyOnMaxZoom: true,
             disableClusteringAtZoom: 17
         });
 
-        // Bakgrundskarta
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap, © CARTO'
         }).addTo(map);
 
-        // Skapar en ikon per karta, med årtal inbakat i html:en
         function createYearIcon(year) {
             return L.divIcon({
                 className: 'ol-icon',
@@ -151,17 +167,13 @@
             });
         }
 
-        // Skottsäker funktion för att identifiera giltiga länkar
         function getButtonHtml(url, label, activeClass) {
             const cleanUrl = url ? String(url).trim() : "";
-            
-            // Kontrollerar stenhårt om länken börjar med http eller https
             const hasValidUrl = cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://");
 
             if (hasValidUrl) {
                 return `<a href="${cleanUrl}" target="_blank" class="btn ${activeClass}">${label}</a>`;
             } else {
-                // Returnerar en span-tagg UTAN href eller target. Denna kan INTE öppna flikar.
                 return `<span class="btn btn-disabled">${label} (saknas)</span>`;
             }
         }
@@ -180,6 +192,7 @@
                     results.data.forEach(row => {
                         const item = {
                             namn: row["Namn"],
+                            plats: row["Plats"] || "",
                             ar: row["År"],
                             arrangor: row["Arrangör"],
                             langd: row["Längd_m"],
@@ -197,7 +210,10 @@
                             
                             const popupContent = `
                                 <div class="ol-popup">
-                                    <h3>${item.namn}</h3>
+                                    <div class="popup-header">
+                                        <h3>${item.namn}</h3>
+                                        ${item.plats ? `<span class="popup-location">📍 ${item.plats}</span>` : ''}
+                                    </div>
                                     <p class="meta">
                                         <strong>${item.ar}</strong> | ${item.arrangor} | ${item.langd}m ${item.tid ? '| ' + item.tid : ''}
                                     </p>
