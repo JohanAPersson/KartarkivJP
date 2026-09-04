@@ -1,18 +1,18 @@
-results.data.forEach(row => {
-    // Hjälpfunktion för att snygga till tidsformat (t.ex. ändra "42.15" till "42:15")
-    const formatTime = (timeStr) => {
-        if (!timeStr) return "";
-        return String(timeStr).trim().replace('.', ':');
-    };
+// Hjälpfunktion placera UTANFÖR slingan så den inte skapas om för varje rad
+function formatTime(timeStr) {
+    if (!timeStr) return "";
+    return String(timeStr).trim().replace('.', ':');
+}
 
+results.data.forEach(row => {
     const item = {
         namn: row["Namn"],
         ar: row["År"],
         arrangor: row["Arrangör"],
         langd: row["Längd_m"],
-        tid: formatTime(row["Tid"]),           // <-- Gör om "42.15" till "42:15"
+        tid: formatTime(row["Tid"]),
         placering: row["Placering"] || "",
-        kmtid: formatTime(row["Kmtid"]),       // <-- Gör om "4.15" till "4:15"
+        kmtid: formatTime(row["Kmtid"]),
         lat: parseFloat(String(row["Latitud"]).replace(',', '.')),
         lng: parseFloat(String(row["Longitud"]).replace(',', '.')),
         referat: row["Referat"] || "Inget referat skrivet.",
