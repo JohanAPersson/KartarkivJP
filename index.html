@@ -191,6 +191,40 @@
             return String(timeStr).trim().replace('.', ':');
         }
 
+        // --- FALLBACK-FUNKTION FÖR BERÄKNING AV MIN/KM ---
+        function calculatePace(timeStr, lengthMeters) {
+            if (!timeStr || !lengthMeters) return "";
+
+            const cleanLength = parseFloat(String(lengthMeters).replace(',', '.'));
+            if (isNaN(cleanLength) || cleanLength <= 0) return "";
+
+            // Dela upp tiden i delar (stödjer både : och .)
+            const timeParts = String(timeStr).trim().split(/[:.]/).map(Number);
+            let totalSeconds = 0;
+
+            if (timeParts.length === 3) { // Timmar:Minuter:Sekunder
+                totalSeconds = timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2];
+            } else if (timeParts.length === 2) { // Minuter:Sekunder
+                totalSeconds = timeParts[0] * 60 + timeParts[1];
+            } else {
+                return "";
+            }
+
+            if (isNaN(totalSeconds) || totalSeconds <= 0) return "";
+
+            // Beräkna sekunder per kilometer
+            const km = cleanLength / 1000;
+            const paceSecondsTotal = Math.round(totalSeconds / km);
+
+            const paceMinutes = Math.floor(paceSecondsTotal / 60);
+            const paceSeconds = paceSecondsTotal % 60;
+
+            // Formatera med inledande nolla för sekunder (t.ex. 4:05)
+            const formattedSeconds = paceSeconds < 10 ? `0${paceSeconds}` : paceSeconds;
+
+            return `${paceMinutes}:${formattedSeconds}`;
+        }
+
         let allMarkersList = [];
 
         async function loadData() {
@@ -203,14 +237,22 @@
                     const yearsFound = new Set();
 
                     results.data.forEach(row => {
+                        const tidFormaterad = formatTime(row["Tid"]);
+                        let kmtidFormaterad = formatTime(row["Kmtid"]);
+
+                        // Fallback: Om Kmtid saknas i arket, beräkna från Tid och Längd
+                        if (!kmtidFormaterad) {
+                            kmtidFormaterad = calculatePace(tidFormaterad, row["Längd_m"]);
+                        }
+
                         const item = {
                             namn: row["Namn"],
                             ar: row["År"],
                             arrangor: row["Arrangör"],
                             langd: row["Längd_m"],
-                            tid: formatTime(row["Tid"]),
+                            tid: tidFormaterad,
                             placering: row["Placering"] || "",
-                            kmtid: formatTime(row["Kmtid"]), // Hämta och formatera Kmtid
+                            kmtid: kmtidFormaterad,
                             lat: parseFloat(String(row["Latitud"]).replace(',', '.')),
                             lng: parseFloat(String(row["Longitud"]).replace(',', '.')),
                             referat: row["Referat"] || "Inget referat skrivet.",
